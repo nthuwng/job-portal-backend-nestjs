@@ -38,8 +38,8 @@ export class UsersService {
   }
 
   findOneByUserName(username: string) {
-    const user = this.userModel.findOne({ email: username });
-    return user;
+    return this.userModel.findOne({ email: username });
+    
   }
 
   isValidPassword(password: string, hashPassword: string) {
