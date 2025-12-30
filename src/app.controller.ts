@@ -11,18 +11,5 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private configService: ConfigService,
-    private authService: AuthService,
   ) {}
-
-  @UseGuards(LocalAuthGuard)
-  @Public()
-  @Post('/login')
-  handleLogin(@Request() req) {
-    return this.authService.login(req.user);
-  }
-
-  @Get('profile')
-  getProfile(@Request() req) {
-    return req.user;
-  }
 }
