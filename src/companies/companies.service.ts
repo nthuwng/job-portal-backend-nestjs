@@ -25,7 +25,6 @@ export class CompaniesService {
     const { filter, sort, population } = aqp(qs);
     delete filter.page;
     delete filter.limit;
-
     let offset = (+currentPage - 1) * +limit;
     let defaultLimit = +limit ? +limit : 10;
 
