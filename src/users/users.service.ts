@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, RegisterUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import mongoose, { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import bcrypt from 'bcryptjs';
 import type { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { IUser } from './users.interface';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class UsersService {
@@ -19,24 +21,59 @@ export class UsersService {
     return hash;
   };
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, user: IUser) {
     const hashedPassword = this.getHashPassword(createUserDto.password);
-    const user = await this.userModel.create({
+    const newUser = await this.userModel.create({
+      name: createUserDto.name,
       email: createUserDto.email,
       password: hashedPassword,
-      name: createUserDto.name,
+      age: createUserDto.age,
+      gender: createUserDto.gender,
       address: createUserDto.address,
+      role: createUserDto.role,
+      company: createUserDto.company,
+      createdBy: { _id: user._id, email: user.email },
     });
-    return user;
+
+    return {
+      _id: newUser._id,
+      createdAt: newUser.createdAt,
+    };
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll(currentPage: number, limit: number, qs: string) {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.page;
+    delete filter.limit;
+    let offset = (+currentPage - 1) * +limit;
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.userModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.userModel
+      .find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .sort(sort as any)
+      .populate(population)
+      .select('-password')
+      .exec();
+
+    return {
+      meta: {
+        current: currentPage, //trang hiện tại
+        pageSize: limit, //số lượng bản ghi đã lấy
+        pages: totalPages, //tổng số trang với điều kiện query
+        total: totalItems, // tổng số phần tử (số bản ghi)
+      },
+      result, //kết quả query
+    };
   }
 
   findOne(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) return 'Not found user';
-    const user = this.userModel.findOne({ _id: id });
+    const user = this.userModel.findOne({ _id: id }).select('-password'); // Exclude password field
     return user;
   }
 
@@ -48,14 +85,33 @@ export class UsersService {
     return bcrypt.compareSync(password, hashPassword);
   }
 
-  async update(updateUserDto: UpdateUserDto) {
+  async update(updateUserDto: UpdateUserDto, user: IUser) {
     return await this.userModel.updateOne(
       { _id: updateUserDto._id },
-      { ...updateUserDto },
+      { ...updateUserDto, updatedBy: { _id: user._id, email: user.email } },
     );
   }
 
-  async remove(id: string) {
-    return await this.userModel.softDelete({ _id: id });
+  async remove(id: string, user: IUser) {
+    await this.userModel.updateOne(
+      { _id: id },
+      { deletedBy: { _id: user._id, email: user.email } },
+    );
+
+    return this.userModel.softDelete({ _id: id });
+  }
+
+  async register(user: RegisterUserDto) {
+    const hashedPassword = this.getHashPassword(user.password);
+    const newUser = await this.userModel.create({
+      name: user.name,
+      email: user.email,
+      password: hashedPassword,
+      age: user.age,
+      gender: user.gender,
+      address: user.address,
+      role: 'USER',
+    });
+    return newUser;
   }
 }
