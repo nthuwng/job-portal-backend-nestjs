@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { IUser } from 'src/users/users.interface';
@@ -46,7 +46,8 @@ export class AuthService {
     //set cookie
     response.cookie('refresh_token', refresh_token, {
       httpOnly: true,
-      maxAge: ms(this.configService.get<string>('JWT_REFRESH_EXPIRE') || '1d'),
+      maxAge:
+        ms(this.configService.get<string>('JWT_REFRESH_EXPIRE') || '1d') * 1000,
     });
 
     return {
@@ -78,4 +79,15 @@ export class AuthService {
     return refresh_token;
   };
 
+  processRefreshToken = async (refresh_token: string) => {
+    try {
+      this.jwtService.verify(refresh_token, {
+        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        'Refresh token không hợp lệ vui lòng login',
+      );
+    }
+  };
 }
