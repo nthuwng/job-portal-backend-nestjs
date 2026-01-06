@@ -12,7 +12,6 @@ import { LocalAuthGuard } from './local-auth.guard';
 import { Public, ResponseMessage, User } from 'src/decorator/customize';
 import { RegisterUserDto } from 'src/users/dto/create-user.dto';
 import type { Response, Request } from 'express';
-import type { IUser } from 'src/users/users.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +40,6 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const refresh_token = req.cookies['refresh_token'];
-    return this.authService.processNewToken(refresh_token , response);
+    return this.authService.processNewToken(refresh_token, response);
   }
 }
