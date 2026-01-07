@@ -22,9 +22,10 @@ async function bootstrap() {
 
   // config CORS
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:3000',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
+    credentials: true,
   });
 
   // config versioning

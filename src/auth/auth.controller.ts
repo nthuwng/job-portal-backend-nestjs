@@ -12,6 +12,7 @@ import { LocalAuthGuard } from './local-auth.guard';
 import { Public, ResponseMessage, User } from 'src/decorator/customize';
 import { RegisterUserDto } from 'src/users/dto/create-user.dto';
 import type { Response, Request } from 'express';
+import type { IUser } from 'src/users/users.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -32,6 +33,14 @@ export class AuthController {
     return this.authService.register(registerUserDto);
   }
 
+  @ResponseMessage('Get user information')
+  @Get('/account')
+  handleGetAccount(
+    @User() user: IUser,
+  ) {
+    return user;
+  }
+
   @Public()
   @ResponseMessage('Get user by refresh token')
   @Get('/refresh')
@@ -41,5 +50,14 @@ export class AuthController {
   ) {
     const refresh_token = req.cookies['refresh_token'];
     return this.authService.processNewToken(refresh_token, response);
+  }
+
+  @ResponseMessage('Logout User')
+  @Get('/logout')
+  handleLogout(
+    @Res({ passthrough: true }) response: Response,
+    @User() user: IUser,
+  ) {
+    return this.authService.logout(response, user);
   }
 }

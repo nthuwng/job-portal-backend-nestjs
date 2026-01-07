@@ -130,4 +130,10 @@ export class AuthService {
       );
     }
   };
+
+  logout = async (response: Response, user: IUser) => {
+    response.clearCookie('refresh_token');
+    await this.usersService.updateUserToken('', user._id.toString());
+    return 'ok';
+  };
 }
