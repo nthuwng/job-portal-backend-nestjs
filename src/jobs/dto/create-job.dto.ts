@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 import {
+  IsDate,
   IsNotEmpty,
   IsNotEmptyObject,
   IsObject,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 class Company {
   @IsNotEmpty()
@@ -41,8 +42,12 @@ export class CreateJobDto {
   description: string;
 
   @IsNotEmpty({ message: 'startDate không được để trống' })
+  @Transform(({ value }) => new Date(value))
+  @IsDate({ message: 'startDate phải là một ngày hợp lệ' })
   startDate: Date;
 
   @IsNotEmpty({ message: 'endDate không được để trống' })
+  @Transform(({ value }) => new Date(value))
+  @IsDate({ message: 'endDate phải là một ngày hợp lệ' })
   endDate: Date;
 }

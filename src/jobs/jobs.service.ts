@@ -6,6 +6,7 @@ import { Job, JobDocument } from './schemas/job.schema';
 import type { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { IUser } from 'src/users/users.interface';
 import aqp from 'api-query-params';
+import mongoose, { mongo } from 'mongoose';
 
 @Injectable()
 export class JobsService {
@@ -57,6 +58,10 @@ export class JobsService {
   }
 
   findOne(id: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return `Not found job`;
+    }
+
     return this.jobModel.findById(id).exec();
   }
 
@@ -68,6 +73,9 @@ export class JobsService {
   }
 
   async remove(id: string, user: IUser) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return `Not found job`;
+    }
     await this.jobModel.updateOne(
       { _id: id },
       { deletedBy: { _id: user._id, email: user.email } },
