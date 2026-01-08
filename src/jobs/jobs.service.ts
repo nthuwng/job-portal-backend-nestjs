@@ -5,6 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Job, JobDocument } from './schemas/job.schema';
 import type { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { IUser } from 'src/users/users.interface';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class JobsService {
@@ -26,22 +27,51 @@ export class JobsService {
     };
   }
 
-  findAll() {
-    return `This action returns all jobs`;
+  async findAll(currentPage: number, limit: number, qs: string) {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+    let offset = (+currentPage - 1) * +limit;
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.jobModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.jobModel
+      .find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .sort(sort as any)
+      .populate(population)
+      .exec();
+
+    return {
+      meta: {
+        current: currentPage, //trang hiện tại
+        pageSize: limit, //số lượng bản ghi đã lấy
+        pages: totalPages, //tổng số trang với điều kiện query
+        total: totalItems, // tổng số phần tử (số bản ghi)
+      },
+      result, //kết quả query
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} job`;
+  findOne(id: string) {
+    return this.jobModel.findById(id).exec();
   }
 
-  update(id: string, updateJobDto: UpdateJobDto , user: IUser) {
+  update(id: string, updateJobDto: UpdateJobDto, user: IUser) {
     return this.jobModel.updateOne(
       { _id: id },
       { ...updateJobDto, updatedBy: { _id: user._id, email: user.email } },
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} job`;
+  async remove(id: string, user: IUser) {
+    await this.jobModel.updateOne(
+      { _id: id },
+      { deletedBy: { _id: user._id, email: user.email } },
+    );
+    return this.jobModel.softDelete({ _id: id });
   }
 }
