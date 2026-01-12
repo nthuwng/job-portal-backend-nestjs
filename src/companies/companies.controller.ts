@@ -19,6 +19,7 @@ export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
 
   @Post()
+  @ResponseMessage('Company created successfully')
   create(@Body() createCompanyDto: CreateCompanyDto, @User() user: IUser) {
     return this.companiesService.create(createCompanyDto, user);
   }
@@ -34,11 +35,13 @@ export class CompaniesController {
   }
 
   @Get(':id')
+  @ResponseMessage('Get company successfully')
   findOne(@Param('id') id: string) {
     return this.companiesService.findOne(+id);
   }
 
   @Patch(':id')
+  @ResponseMessage('Company updated successfully')
   update(
     @Param('id') id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
@@ -48,6 +51,7 @@ export class CompaniesController {
   }
 
   @Delete(':id')
+  @ResponseMessage('Company deleted successfully')
   remove(@Param('id') id: string, @User() user: IUser) {
     return this.companiesService.remove(id, user);
   }
